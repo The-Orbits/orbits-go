@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # The oldest Go the module supports, and the newest.
+        go: ["1.23", "stable"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+
+      - run: go vet ./...
+
+      - run: go build ./...
+
+      - run: go test -race ./...
+
+      - name: Generated types match the vendored spec
+        run: go run ./scripts/gentypes -check
+
+      # With the repository variable ORBITS_SPEC_URL set (the published contract), also check the vendored copy is
+      # current.
+      - name: Vendored spec matches the published one
+        if: ${{ vars.ORBITS_SPEC_URL != '' }}
+        run: scripts/sync-spec.sh --check "${{ vars.ORBITS_SPEC_URL }}"

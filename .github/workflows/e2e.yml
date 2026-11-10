@@ -1,0 +1,26 @@
+name: Live tests
+
+# Runs the live suite (TestLive) against staging when started by hand. It needs the repository secret
+# ORBITS_E2E_TOKEN (a full API token of a test team) and the variable ORBITS_E2E_TEAM. The suite creates its own
+# project and deletes it at the end.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go test -run TestLive -v -count=1 ./
+        env:
+          ORBITS_E2E_TOKEN: ${{ secrets.ORBITS_E2E_TOKEN }}
+          ORBITS_E2E_TEAM: ${{ vars.ORBITS_E2E_TEAM }}
+          ORBITS_API_URL: https://stagingapi.theorbits.app/v1
