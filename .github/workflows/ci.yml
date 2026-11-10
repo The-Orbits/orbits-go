@@ -22,9 +22,9 @@ jobs:
         # The oldest Go the module supports, and the newest.
         go: ["1.23", "stable"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go }}
 
